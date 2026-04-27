@@ -1,0 +1,6 @@
+{
+  "name": "Neon Rhythm Snake",
+  "description": "A high-octane classic Snake game paired with a dark neon music player for a true cyberpunk arcade experience.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["gameplay", "audio_playback"]
+}
