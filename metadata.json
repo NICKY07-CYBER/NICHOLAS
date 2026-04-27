@@ -1,6 +1,6 @@
 {
-  "name": "Neon Rhythm Snake",
-  "description": "A high-octane classic Snake game paired with a dark neon music player for a true cyberpunk arcade experience.",
+  "name": "Shadow Strike: Naveen vs Ravi",
+  "description": "A 2D shadow-style fighting game featuring agile Naveen and powerful Ravi in a battle of speed versus strength.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["gameplay", "audio_playback"]
+  "majorCapabilities": ["canvas_rendering", "ai_opponent", "sound_system"]
 }
