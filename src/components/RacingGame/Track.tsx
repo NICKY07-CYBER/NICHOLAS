@@ -37,23 +37,22 @@ export const Track = () => {
   return (
     <group>
       <mesh ref={floor}>
-        <planeGeometry args={[5000, 5000]} />
-        <meshStandardMaterial color="#222" metalness={0.1} roughness={0.8} />
+        <planeGeometry args={[2000, 2000]} />
+        <meshStandardMaterial color="#020202" metalness={1} roughness={0.5} />
       </mesh>
-      <gridHelper args={[5000, 100, 0xff0000, 0x444444]} rotation={[-Math.PI/2, 0, 0]} position={[0, -0.99, 0]} />
 
       <mesh ref={startPlatform}>
-        <boxGeometry args={[40, 1, 60]} />
-        <meshStandardMaterial color="#333" roughness={0.6} metalness={0.2} />
-        <Float speed={1} rotationIntensity={0.2} floatIntensity={0.2}>
+        <boxGeometry args={[30, 1, 30]} />
+        <meshStandardMaterial color="#111" roughness={0.1} metalness={0.9} />
+        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
           <Text
-            position={[0, 8, -25]}
-            fontSize={5}
-            color="#ffffff"
-            font="/fonts/Inter-Bold.woff"
+            position={[0, 4, -10]}
+            fontSize={2.5}
+            color="#00f2ff"
+            font="/fonts/Inter-Bold.woff" // fallback
           >
-            TECH CITY
-            <meshStandardMaterial color="#ffffff" metalness={1} roughness={0} />
+            NEON ASPHALT
+            <meshBasicMaterial color="#00f2ff" toneMapped={false} />
           </Text>
         </Float>
       </mesh>
@@ -61,14 +60,18 @@ export const Track = () => {
       {/* Finish Line Visual */}
       <group position={[0, 0, 0]}>
         <mesh ref={finishLine} visible={false}>
-          <boxGeometry args={[40, 10, 2]} />
+          <boxGeometry args={[30, 10, 2]} />
         </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-          <planeGeometry args={[40, 4]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.2} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[30, 4]} />
+          <meshBasicMaterial color="#00f2ff" transparent opacity={0.4} />
         </mesh>
-        {/* Support Arches */}
-        <CityGate position={[0, 0, 0]} color="#ffffff" />
+        <mesh position={[0, 5, 0]}>
+          <boxGeometry args={[31, 10, 0.2]} />
+          <meshBasicMaterial color="#00f2ff" wireframe transparent opacity={0.1} />
+        </mesh>
+        {/* Luminous Start Gate */}
+        <NeonArch position={[0, 0, 1.5]} color="#00f2ff" />
       </group>
 
       {/* Futuristic Tracks */}
@@ -77,33 +80,26 @@ export const Track = () => {
       <TrackSegment position={[40, 2, -160]} rotation={[0.1, 0.8, 0]} args={[12, 0.5, 100]} />
       <TrackSegment position={[100, 10, -200]} rotation={[0, 1.57, 0]} args={[140, 0.5, 12]} />
       
-      {/* Urban Gates */}
-      <CityGate position={[0, 0, -30]} color="#ffffff" />
-      <CityGate position={[10, 0, -80]} rotation={[0, 0.4, 0]} color="#ffffff" />
-      <CityGate position={[40, 2, -140]} rotation={[0.1, 0.8, 0]} color="#ffffff" />
-      <CityGate position={[80, 10, -205]} rotation={[0, 1.57, 0]} color="#ffffff" />
+      {/* Neon Archways */}
+      <NeonArch position={[0, 0, -30]} color="#00f2ff" />
+      <NeonArch position={[10, 0, -80]} rotation={[0, 0.4, 0]} color="#f0f" />
+      <NeonArch position={[40, 2, -140]} rotation={[0.1, 0.8, 0]} color="#0f0" />
+      <NeonArch position={[80, 10, -205]} rotation={[0, 1.57, 0]} color="#ff0" />
 
-      {/* Distant Skyscrapers (Glass blocks) */}
-      {[...Array(60)].map((_, i) => (
-        <mesh key={i} position={[(Math.random() - 0.5) * 800, (Math.random() * 50), -300 - Math.random() * 600]} receiveShadow castShadow>
-          <boxGeometry args={[15 + Math.random() * 25, 40 + Math.random() * 200, 15 + Math.random() * 25]} />
-          <meshPhysicalMaterial 
-            color="#aaa" 
-            metalness={1} 
-            roughness={0.05} 
-            transparent 
-            opacity={0.9}
-            envMapIntensity={2}
-          />
-          {/* Internal Structure / Glow */}
-          <mesh position={[0, 0, 0]} scale={[0.9, 1, 0.9]}>
-             <boxGeometry args={[15 + Math.random() * 25, 40 + Math.random() * 200, 15 + Math.random() * 25]} />
-             <meshStandardMaterial color="#222" />
+      {/* Distant Skyscrapers (Neon cubes) */}
+      {[...Array(30)].map((_, i) => (
+        <mesh key={i} position={[(Math.random() - 0.5) * 500, (Math.random() * 100), -200 - Math.random() * 300]}>
+          <boxGeometry args={[10 + Math.random() * 20, 50 + Math.random() * 150, 10 + Math.random() * 20]} />
+          <meshStandardMaterial color="#050505" />
+          {/* Windows/Glow */}
+          <mesh position={[0, 0, 0]} scale={[1.01, 1.01, 1.01]}>
+             <boxGeometry args={[11 + Math.random() * 20, 51 + Math.random() * 150, 11 + Math.random() * 20]} />
+             <meshBasicMaterial color={['#00f2ff', '#f0f', '#0f0'][i % 3]} wireframe opacity={0.1} transparent />
           </mesh>
         </mesh>
       ))}
 
-      <fog attach="fog" args={['#ffffff', 100, 1000]} />
+      <fog attach="fog" args={['#030305', 50, 400]} />
     </group>
   );
 };
@@ -117,43 +113,43 @@ const TrackSegment = ({ position, rotation = [0, 0, 0], args }: any) => {
   }));
 
   return (
-    <mesh ref={ref} receiveShadow>
+    <mesh ref={ref}>
       <boxGeometry args={args} />
-      <meshStandardMaterial color="#222" roughness={0.8} metalness={0.2} />
+      <meshStandardMaterial color="#080808" roughness={0.1} metalness={1} />
       
-      {/* Road Center Line (White/Yellow) */}
+      {/* Road Center Line */}
       <mesh position={[0, 0.26, 0]}>
-        <planeGeometry args={[0.3, args[2]]} />
-        <meshBasicMaterial color="#ffffff" />
+        <planeGeometry args={[0.2, args[2]]} />
+        <meshBasicMaterial color="#00f2ff" toneMapped={false} />
       </mesh>
 
-      {/* Side Barriers */}
-      <mesh position={[args[0]/2 - 0.2, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.4, 0.6, args[2]]} />
-        <meshStandardMaterial color="#555" />
+      {/* Luminous Curbs */}
+      <mesh position={[args[0]/2 - 0.1, 0.3, 0]}>
+        <boxGeometry args={[0.2, 0.4, args[2]]} />
+        <meshBasicMaterial color="#f0f" toneMapped={false} />
       </mesh>
-      <mesh position={[-args[0]/2 + 0.2, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.4, 0.6, args[2]]} />
-        <meshStandardMaterial color="#555" />
+      <mesh position={[-args[0]/2 + 0.1, 0.3, 0]}>
+        <boxGeometry args={[0.2, 0.4, args[2]]} />
+        <meshBasicMaterial color="#f0f" toneMapped={false} />
       </mesh>
     </mesh>
   );
 };
 
-const CityGate = ({ position, rotation = [0, 0, 0], color }: any) => {
+const NeonArch = ({ position, rotation = [0, 0, 0], color }: any) => {
   return (
     <group position={position} rotation={rotation}>
-      <mesh position={[0, 10, 0]} castShadow>
-        <boxGeometry args={[25, 1, 2]} />
-        <meshStandardMaterial color="#333" metalness={0.8} />
+      <mesh position={[0, 8, 0]}>
+        <boxGeometry args={[20, 0.5, 1]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
-      <mesh position={[12, 5, 0]} castShadow>
-        <boxGeometry args={[1, 10, 2]} />
-        <meshStandardMaterial color="#333" metalness={0.8} />
+      <mesh position={[10, 4, 0]}>
+        <boxGeometry args={[0.5, 8, 1]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
-      <mesh position={[-12, 5, 0]} castShadow>
-        <boxGeometry args={[1, 10, 2]} />
-        <meshStandardMaterial color="#333" metalness={0.8} />
+      <mesh position={[-10, 4, 0]}>
+        <boxGeometry args={[0.5, 8, 1]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
     </group>
   );

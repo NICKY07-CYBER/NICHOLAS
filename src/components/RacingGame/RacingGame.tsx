@@ -1,11 +1,9 @@
 import React, { Suspense, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
-import { Environment, Sky, ContactShadows } from '@react-three/drei';
+import { Environment, Stars } from '@react-three/drei';
 import { Vehicle } from './Vehicle';
 import { Track } from './Track';
-import { EngineSound } from '../EngineSound';
-import { BackgroundMusic } from '../BackgroundMusic';
 import { useRacingStore } from '../../hooks/useRacingStore';
 import * as THREE from 'three';
 
@@ -97,10 +95,11 @@ export default function RacingGame() {
 
   return (
     <div className="w-full h-full bg-black relative font-sans overflow-hidden">
-      <Canvas shadows camera={{ position: [0, 5, 10], fov: 55 }} gl={{ antialias: true }}>
+      <Canvas shadows camera={{ position: [0, 5, 10], fov: 55 }}>
         <Suspense fallback={null}>
-          <Sky sunPosition={[100, 20, 100]} />
-          <Environment preset="city" />
+          <color attach="background" args={['#030305']} />
+          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+          <Environment preset="night" />
           
           <Physics
             gravity={[0, -9.81, 0]}
@@ -114,96 +113,118 @@ export default function RacingGame() {
           </Physics>
 
           <FollowCamera />
-          <EngineSound />
-          <BackgroundMusic />
           
-          <ambientLight intensity={0.5} />
-          <directionalLight
-            position={[50, 50, 50]}
-            intensity={1.5}
-            castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-50}
-            shadow-camera-right={50}
-            shadow-camera-top={50}
-            shadow-camera-bottom={-50}
-          />
-          <ContactShadows resolution={1024} scale={200} blur={2} opacity={0.35} far={10} color="#000000" />
+          <ambientLight intensity={0.4} />
+          <spotLight position={[10, 20, 10]} angle={0.2} penumbra={1} intensity={1.5} castShadow />
         </Suspense>
       </Canvas>
 
-      {/* OVERLAY HUD - MINIMAL TECH */}
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8">
+      {/* OVERLAY HUD - NEON STYLE */}
+      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-10">
         {/* Top Header */}
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
-            <h1 className="text-4xl font-black tracking-tighter text-white opacity-90">
-              METROPOLIS_<span className="text-red-600">DRIVE</span>
+            <h1 className="text-6xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-600 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+              NEON ASPHALT
             </h1>
-            <div className="flex items-center gap-4 mt-1">
-              <div className="h-[2px] w-12 bg-red-600" />
-              <p className="text-[9px] text-white/50 uppercase tracking-[0.4em] font-medium">Urban Environment v1.0.4</p>
+            <div className="h-1 w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 mt-1 shadow-[0_0_10px_#06b6d4]" />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-[10px] text-cyan-300 uppercase tracking-[0.6em] font-bold">Arcade Series / Night City</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] text-fuchsia-500 font-bold uppercase tracking-widest">Lap</span>
+                <span className="text-2xl font-black italic text-white drop-shadow-[0_0_10px_#d946ef]">{lap}</span>
+              </div>
             </div>
           </div>
           
-          <div className="bg-white/5 border-l-2 border-red-600 p-4 backdrop-blur-md flex flex-col gap-1 items-end min-w-[200px]">
-             <div className="flex justify-between w-full items-baseline">
-               <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Time</span>
-               <span className="text-xl text-white font-mono font-bold">{formatTime(currentLapTime)}</span>
-             </div>
-             {bestLapTime > 0 && (
-               <div className="flex justify-between w-full items-baseline border-t border-white/10 mt-1 pt-1">
-                 <span className="text-[9px] text-red-500/80 font-bold uppercase">Best</span>
-                 <span className="text-sm text-white/80 font-mono italic">{formatTime(bestLapTime)}</span>
+          <div className="flex flex-col items-end gap-2">
+            {/* Timer HUD */}
+            <div className="bg-black/80 border-l-4 border-fuchsia-600 p-4 backdrop-blur-xl flex flex-col gap-1 items-end min-w-[200px] mb-2 shadow-[0_0_30px_rgba(217,70,239,0.2)]">
+               <div className="flex justify-between w-full items-baseline">
+                 <span className="text-[10px] text-fuchsia-500 font-bold uppercase tracking-widest">Current Time</span>
+                 <span className="text-xl text-white font-mono font-bold tracking-tighter">{formatTime(currentLapTime)}</span>
                </div>
-             )}
+               {lastLapTime > 0 && (
+                 <div className="flex justify-between w-full items-baseline opacity-80">
+                   <span className="text-[9px] text-cyan-400 font-bold uppercase">Last Lap</span>
+                   <span className="text-sm text-cyan-100 font-mono italic">{formatTime(lastLapTime)}</span>
+                 </div>
+               )}
+               {bestLapTime > 0 && (
+                 <div className="flex justify-between w-full items-baseline">
+                   <span className="text-[9px] text-yellow-400 font-bold uppercase">Best Lap</span>
+                   <span className="text-sm text-yellow-100 font-mono font-bold tracking-tighter">{formatTime(bestLapTime)}</span>
+                 </div>
+               )}
+            </div>
+
+            <div className="bg-black/60 border-r-4 border-cyan-500 p-4 backdrop-blur-xl flex flex-col gap-1 items-end min-w-[240px]">
+               <div className="flex justify-between w-full items-baseline">
+                 <span className="text-[10px] text-cyan-500 font-bold uppercase tracking-widest">Nitro System</span>
+                 <span className="text-xs text-white font-mono">{Math.floor(nitro)}%</span>
+               </div>
+               <div className="w-full h-3 bg-neutral-900/80 rounded-sm overflow-hidden p-[2px] border border-cyan-500/30">
+                 <div 
+                   className="h-full transition-all duration-75 shadow-[0_0_20px_#22d3ee]" 
+                   style={{ 
+                     width: `${nitro}%`,
+                     backgroundColor: isNitroActive ? '#22d3ee' : '#0891b2'
+                   }} 
+                 />
+               </div>
+               {isNitroActive && (
+                 <div className="text-[9px] text-cyan-400 animate-pulse font-bold tracking-tighter uppercase">Nitro Active! High Speed Burn</div>
+               )}
+            </div>
           </div>
         </div>
 
-        {/* Bottom HUD - Floating Speedometer */}
-        <div className="flex justify-center items-end pb-4">
-          <div className="flex flex-col items-center">
-            <div className={`transition-all duration-300 ${isNitroActive ? 'scale-110 blur-[1px]' : 'scale-100'}`}>
-              <div className="relative flex flex-col items-center">
-                <span className="text-9xl font-black text-white tracking-tighter">
-                  {speed.toString().padStart(3, '0')}
-                </span>
-                <span className="text-xl font-bold text-red-600 -mt-6 tracking-[0.5em] ml-4">KM/H</span>
+        {/* Bottom HUD */}
+        <div className="flex justify-between items-end">
+          <div className="flex flex-col gap-4">
+            {recording.length > 0 && (
+              <button 
+                onClick={() => setReplaying(!isReplaying)}
+                className={`pointer-events-auto px-6 py-3 border-2 font-black italic tracking-widest transition-all duration-300 transform -skew-x-12 cursor-pointer ${isReplaying ? 'bg-fuchsia-600 border-white text-white shadow-[0_0_20px_#d946ef]' : 'bg-black/60 border-fuchsia-500 text-fuchsia-400 hover:bg-fuchsia-500 hover:text-black'}`}
+              >
+                {isReplaying ? 'EXIT REPLAY' : 'WATCH BEST LAP'}
+              </button>
+            )}
+            <div className="flex gap-4 items-center">
+              <div className="w-12 h-12 rounded-full border-2 border-fuchsia-500/50 flex items-center justify-center bg-black/40 backdrop-blur-md">
+                 <div className="w-2 h-2 bg-fuchsia-500 rounded-full animate-ping" />
+              </div>
+              <div className="text-fuchsia-400 font-mono">
+                <p className="text-[10px] uppercase font-bold tracking-widest">GPS Status</p>
+                <p className="text-xs">LOCKED_ON_DRIFT</p>
               </div>
             </div>
-            
-            {/* Speed Bar */}
-            <div className="mt-2 flex gap-[2px]">
-               {[...Array(40)].map((_, i) => (
+            <div className="text-white/30 text-[9px] uppercase tracking-[0.3em] font-mono bg-black/60 p-3 backdrop-blur-md border border-white/10">
+               [W/S] Drive | [A/D] Drift | [L_SHIFT] Nitro | [SPACE] Brake | [R] Reset
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end">
+            <div className={`transition-all duration-300 ${isNitroActive ? 'scale-110' : 'scale-100'}`}>
+              <div className="relative">
+                <span className="text-9xl font-black italic text-white tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                  {speed.toString().padStart(3, '0')}
+                </span>
+                <div className="absolute -bottom-2 right-0">
+                  <span className="text-2xl font-black italic text-fuchsia-500 drop-shadow-[0_0_10px_#d946ef]">KM/H</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-1">
+               {[...Array(20)].map((_, i) => (
                  <div 
                    key={i} 
-                   className={`h-6 w-[2px] ${i < (speed / 7.5) ? 'bg-red-600' : 'bg-white/10'}`} 
+                   className={`h-4 w-1 transform -skew-x-12 ${i < (speed / 15) ? 'bg-cyan-500 shadow-[0_0_5px_#06b6d4]' : 'bg-neutral-800'}`} 
                  />
                ))}
             </div>
-
-            {/* Nitro Gauge */}
-            <div className="mt-4 w-64 h-1 bg-white/10 relative">
-               <div 
-                 className="h-full bg-blue-500 transition-all duration-75" 
-                 style={{ width: `${nitro}%` }}
-               />
-               <div className="absolute -top-4 left-0 text-[8px] text-white/30 uppercase tracking-widest">Nitro_Reserve</div>
-            </div>
           </div>
         </div>
-
-        {/* Replay Button if available */}
-        {recording.length > 0 && (
-          <div className="absolute bottom-8 right-8">
-            <button 
-              onClick={() => setReplaying(!isReplaying)}
-              className={`pointer-events-auto px-4 py-2 text-[10px] uppercase font-bold tracking-widest border border-white/20 transition-all ${isReplaying ? 'bg-red-600 text-white' : 'bg-black/40 text-white/60 hover:bg-white/10'}`}
-            >
-              {isReplaying ? 'Live_Feed' : 'Last_Run_Data'}
-            </button>
-          </div>
-        )}
       </div>
       
       {/* Nitro Flash Overlay */}

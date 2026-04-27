@@ -15,7 +15,7 @@ const PARTICLE_COUNT = 30;
 export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, number] }) => {
   const controls = useControls();
   const [velocity, setVelocity] = useState([0, 0, 0]);
-  const { nitro, setNitro, setSpeed, setIsNitroActive, resetRace, isReplaying, isNitroActive } = useRacingStore();
+  const { nitro, setNitro, setSpeed, setIsNitroActive, resetRace, isReplaying } = useRacingStore();
 
   const [chassis, chassisApi] = useBox(
     () => ({
@@ -104,8 +104,6 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
     }
   }, [chassisApi]);
 
-  const thrusterRef = useRef<THREE.Mesh>(null!);
-
   useFrame((state, delta) => {
     if (!vehicleApi || !chassisApi || isReplaying) return;
     
@@ -113,16 +111,9 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
     const { forward, backward, left, right, brake, nitro: nitroKey, reset } = controls;
     
     const currentVel = velocity || [0, 0, 0];
-    const sMs = Math.sqrt((currentVel[0]||0)**2 + (currentVel[1]||0)**2 + (currentVel[2]||0)**2);
-    const speedKmh = Math.floor(sMs * 3.6);
+    const speedMs = Math.sqrt((currentVel[0]||0)**2 + (currentVel[1]||0)**2 + (currentVel[2]||0)**2);
+    const speedKmh = Math.floor(speedMs * 3.6);
     setSpeed(speedKmh);
-
-    // Update thruster visual directly for performance
-    if (thrusterRef.current) {
-      const mat = thrusterRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = Math.min(0.9, sMs / 15);
-      mat.color.set(isNitroActive ? "#ff00ff" : "#00f2ff");
-    }
 
     // Nitro Logic
     const useNitro = nitroKey && nitro > 0 && speedKmh > 10;
@@ -135,9 +126,9 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
       setNitro(Math.min(100, nitro + delta * (speedKmh > 40 ? 5 + driftIntensity * 10 : 5)));
     }
 
-    const forceBase = 3200;
-    const force = useNitro ? forceBase * 2.8 : forceBase;
-    const steer = 0.45;
+    const forceBase = 2500;
+    const force = useNitro ? forceBase * 2.5 : forceBase;
+    const steer = 0.5;
 
     try {
       // Engine/Brakes safety
@@ -238,99 +229,30 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
 
   return (
     <group ref={vehicle}>
-      <mesh ref={chassis} name="vehicle-chassis" castShadow>
+      <mesh ref={chassis} name="vehicle-chassis">
         <boxGeometry args={[chassisWidth, chassisHeight, chassisLength]} />
-        <meshPhysicalMaterial 
-          color="#aa0000" 
-          metalness={1} 
-          roughness={0.1} 
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          envMapIntensity={2}
-          reflectivity={1}
-        />
-        
-        {/* Car Top / Cockpit */}
-        <mesh position={[0, 0.45, -0.1]} castShadow>
-          <boxGeometry args={[chassisWidth * 0.85, 0.4, chassisLength * 0.5]} />
-          <meshPhysicalMaterial 
-            color="#000033" 
-            metalness={1} 
-            roughness={0.05} 
-            clearcoat={1}
-            envMapIntensity={2}
-          />
-        </mesh>
-
-        {/* Spoiler */}
-        <mesh position={[0, 0.5, 1.1]} castShadow>
-          <boxGeometry args={[chassisWidth * 1.1, 0.05, 0.3]} />
-          <meshStandardMaterial color="#222" metalness={0.8} roughness={0.2} />
-        </mesh>
-        <mesh position={[-0.5, 0.3, 1.1]}>
-          <boxGeometry args={[0.05, 0.4, 0.2]} />
-          <meshStandardMaterial color="#222" />
-        </mesh>
-        <mesh position={[0.5, 0.3, 1.1]}>
-          <boxGeometry args={[0.05, 0.4, 0.2]} />
-          <meshStandardMaterial color="#222" />
-        </mesh>
-
-        {/* Headlights */}
-        <mesh position={[-0.45, 0, -1.2]}>
-          <boxGeometry args={[0.2, 0.1, 0.05]} />
-          <meshBasicMaterial color="#ffffff" toneMapped={false} />
-          <pointLight intensity={2} distance={10} color="#ffffff" />
-        </mesh>
-        <mesh position={[0.45, 0, -1.2]}>
-          <boxGeometry args={[0.2, 0.1, 0.05]} />
-          <meshBasicMaterial color="#ffffff" toneMapped={false} />
-          <pointLight intensity={2} distance={10} color="#ffffff" />
-        </mesh>
-
-        {/* Tail Lights */}
-        <mesh position={[-0.45, 0, 1.2]}>
-          <boxGeometry args={[0.3, 0.05, 0.05]} />
-          <meshBasicMaterial color="#ff0000" toneMapped={false} />
-        </mesh>
-        <mesh position={[0.45, 0, 1.2]}>
-          <boxGeometry args={[0.3, 0.05, 0.05]} />
-          <meshBasicMaterial color="#ff0000" toneMapped={false} />
-        </mesh>
-
-        {/* Blue/Red Chameleon Accents */}
-        <mesh position={[0, -0.2, 0]}>
-          <boxGeometry args={[chassisWidth + 0.02, 0.1, chassisLength]} />
-          <meshStandardMaterial color="#0066ff" metalness={1} roughness={0.1} />
-        </mesh>
-        
-        {/* Neon Underglow */}
-        <mesh position={[0, -chassisHeight/2, 0]} rotation={[-Math.PI/2, 0, 0]}>
-          <planeGeometry args={[chassisWidth * 1.2, chassisLength * 0.8]} />
-          <meshBasicMaterial color="#ff0044" transparent opacity={0.2} />
+        <meshStandardMaterial color="#050505" metalness={1} roughness={0.05} />
+        <mesh position={[0, 0.4, -0.2]}>
+          <boxGeometry args={[chassisWidth * 0.8, 0.5, chassisLength * 0.4]} />
+          <meshStandardMaterial color="#00f2ff" transparent opacity={0.4} metalness={1} roughness={0} />
         </mesh>
         
         {/* Rear thruster glow (Nitro/Exhaust) */}
-        <mesh position={[0, -0.1, 1.25]} ref={thrusterRef}>
+        <mesh position={[0, -0.1, 1.25]}>
           <boxGeometry args={[0.5, 0.15, 0.1]} />
           <meshBasicMaterial 
             color="#00f2ff" 
             transparent 
-            opacity={0} 
-            toneMapped={false}
+            opacity={Math.min(0.9, (Math.sqrt((velocity?.[0]||0)**2 + (velocity?.[1]||0)**2 + (velocity?.[2]||0)**2) / 15))} 
           />
         </mesh>
       </mesh>
 
       {wheelRefs.map((ref, i) => (
         <group ref={ref} key={i}>
-          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-            <cylinderGeometry args={[wheelRadius, wheelRadius, 0.25, 24]} />
-            <meshStandardMaterial color="#111" roughness={0.8} />
-          </mesh>
           <mesh rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[wheelRadius * 0.8, wheelRadius * 0.8, 0.26, 12]} />
-            <meshStandardMaterial color="#666" metalness={1} roughness={0.2} wireframe />
+            <cylinderGeometry args={[wheelRadius, wheelRadius, 0.2, 16]} />
+            <meshStandardMaterial color="#111" />
           </mesh>
         </group>
       ))}
