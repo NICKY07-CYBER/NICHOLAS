@@ -2,7 +2,6 @@ import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox, useRaycastVehicle } from '@react-three/cannon';
 import { useControls } from '../../hooks/useControls';
-import { useRacingStore } from '../../hooks/useRacingStore';
 import * as THREE from 'three';
 
 const chassisWidth = 1.2;
@@ -15,7 +14,6 @@ const PARTICLE_COUNT = 30;
 export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, number] }) => {
   const controls = useControls();
   const [velocity, setVelocity] = useState([0, 0, 0]);
-  const { nitro, setNitro, setSpeed, setIsNitroActive, resetRace, isReplaying } = useRacingStore();
 
   const [chassis, chassisApi] = useBox(
     () => ({
@@ -43,13 +41,12 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
     useRef<THREE.Mesh>(null!)
   );
 
-  // Particles for smoke/heat/nitro
+  // Particles for smoke/heat
   const particles = useMemo(() => {
     const p = new Array(PARTICLE_COUNT).fill(0).map(() => ({
       pos: new THREE.Vector3(),
       life: 0,
       speed: new THREE.Vector3(),
-      type: 'smoke' as 'smoke' | 'spark' | 'nitro',
     }));
     return p;
   }, []);
@@ -67,9 +64,9 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
     radius: wheelRadius,
     directionLocal: [0, -1, 0] as [number, number, number],
     axleLocal: [-1, 0, 0] as [number, number, number],
-    suspensionStiffness: 40,
+    suspensionStiffness: 30,
     suspensionRestLength: 0.3,
-    frictionSlip: 3.5, // Buffed grip for arcade feel
+    frictionSlip: 2.5,
     dampingRelaxation: 2.3,
     dampingCompression: 4.4,
     maxSuspensionForce: 100000,
@@ -105,29 +102,10 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
   }, [chassisApi]);
 
   useFrame((state, delta) => {
-    if (!vehicleApi || !chassisApi || isReplaying) return;
+    if (!vehicleApi || !chassisApi) return;
     
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { forward, backward, left, right, brake, nitro: nitroKey, reset } = controls;
-    
-    const currentVel = velocity || [0, 0, 0];
-    const speedMs = Math.sqrt((currentVel[0]||0)**2 + (currentVel[1]||0)**2 + (currentVel[2]||0)**2);
-    const speedKmh = Math.floor(speedMs * 3.6);
-    setSpeed(speedKmh);
-
-    // Nitro Logic
-    const useNitro = nitroKey && nitro > 0 && speedKmh > 10;
-    setIsNitroActive(useNitro);
-    if (useNitro) {
-      setNitro(Math.max(0, nitro - delta * 30));
-    } else {
-      // Slow recharge, faster if drifting
-      const driftIntensity = (left || right || brake) ? 1 : 0;
-      setNitro(Math.min(100, nitro + delta * (speedKmh > 40 ? 5 + driftIntensity * 10 : 5)));
-    }
-
-    const forceBase = 2500;
-    const force = useNitro ? forceBase * 2.5 : forceBase;
+    const { forward, backward, left, right, brake, reset } = controls;
+    const force = 2500;
     const steer = 0.5;
 
     try {
@@ -150,14 +128,10 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
         vehicleApi.setSteeringValue(left ? steer : right ? -steer : 0, 1);
       }
 
-      const bForce = brake ? 1500 : 0; // Much stronger brakes
+      const bForce = brake ? 100 : 0;
       if (vehicleApi.setBrake) {
         vehicleApi.setBrake(bForce, 2);
         vehicleApi.setBrake(bForce, 3);
-        if (speedKmh > 20) {
-           vehicleApi.setBrake(bForce / 2, 0);
-           vehicleApi.setBrake(bForce / 2, 1);
-        }
       }
 
       if (reset) {
@@ -165,32 +139,22 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
         chassisApi.velocity?.set(0, 0, 0);
         chassisApi.rotation?.set(0, 0, 0);
         chassisApi.angularVelocity?.set(0, 0, 0);
-        resetRace();
       }
 
-      // Particle Logic
-      const isDrifting = speedKmh > 40 && (left || right || brake);
+      // Particle Logic (Smoke during drift)
+      const currentVel = velocity || [0, 0, 0];
+      const speedSq = (currentVel[0]||0)**2 + (currentVel[1]||0)**2 + (currentVel[2]||0)**2;
+      const speed = Math.sqrt(speedSq);
+      const isDrifting = speed > 5 && (left || right || brake);
       
-      // Nitro particles
-      if (useNitro && Math.random() > 0.3) {
-        const p = particles.find(p => p.life <= 0);
-        if (p && vehicle.current) {
-          p.type = 'nitro';
-          p.pos.setFromMatrixPosition(chassis.current.matrixWorld);
-          p.life = 0.6;
-          p.speed.set((Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, 0.4);
-          p.speed.applyQuaternion(chassis.current.quaternion);
-        }
-      }
-
-      // Drift smoke
-      if (isDrifting && Math.random() > 0.4) {
-        const p = particles.find(p => p.life <= 0);
-        if (p && wheelRefs[2].current) {
-          p.type = 'smoke';
-          p.pos.setFromMatrixPosition(wheelRefs[Math.random() > 0.5 ? 2 : 3].current.matrixWorld);
-          p.life = 1.0;
-          p.speed.set((Math.random() - 0.5) * 0.2, Math.random() * 0.4, (Math.random() - 0.5) * 0.2);
+      if (isDrifting && Math.random() > 0.5 && particles) {
+        const deadParticle = particles.find(p => p.life <= 0);
+        if (deadParticle && vehicle.current && wheelRefs[2] && wheelRefs[2].current) {
+          const wheelPos = new THREE.Vector3();
+          wheelPos.setFromMatrixPosition(wheelRefs[2].current.matrixWorld);
+          deadParticle.pos.copy(wheelPos);
+          deadParticle.life = 1.0;
+          deadParticle.speed.set((Math.random() - 0.5) * 0.5, Math.random() * 0.5, (Math.random() - 0.5) * 0.5);
         }
       }
 
@@ -200,22 +164,10 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
           const p = particles[i];
           if (p && p.life > 0 && mesh && mesh.position) {
             p.pos.add(p.speed);
-            p.life -= delta * (p.type === 'nitro' ? 2 : 1);
+            p.life -= delta * 2;
             mesh.position.copy(p.pos);
-            mesh.scale.setScalar(p.life * (p.type === 'nitro' ? 1.5 : 1));
+            mesh.scale.setScalar(Math.max(0.01, p.life));
             mesh.visible = true;
-            
-            const mat = (mesh as THREE.Mesh).material as THREE.MeshBasicMaterial;
-            if (p.type === 'nitro') {
-               mat.color.set(0x00f2ff);
-               mat.opacity = p.life * 0.8;
-            } else if (p.type === 'smoke') {
-               mat.color.set(0xffffff);
-               mat.opacity = p.life * 0.3;
-            } else {
-               mat.color.set(0xff4400);
-               mat.opacity = p.life;
-            }
           } else if (mesh) {
             mesh.visible = false;
           }
@@ -229,21 +181,21 @@ export const Vehicle = ({ position = [0, 5, 0] }: { position?: [number, number, 
 
   return (
     <group ref={vehicle}>
-      <mesh ref={chassis} name="vehicle-chassis">
+      <mesh ref={chassis}>
         <boxGeometry args={[chassisWidth, chassisHeight, chassisLength]} />
-        <meshStandardMaterial color="#050505" metalness={1} roughness={0.05} />
+        <meshStandardMaterial color="#222" metalness={0.8} roughness={0.2} />
         <mesh position={[0, 0.4, -0.2]}>
           <boxGeometry args={[chassisWidth * 0.8, 0.5, chassisLength * 0.4]} />
-          <meshStandardMaterial color="#00f2ff" transparent opacity={0.4} metalness={1} roughness={0} />
+          <meshStandardMaterial color="#444" transparent opacity={0.6} />
         </mesh>
         
-        {/* Rear thruster glow (Nitro/Exhaust) */}
-        <mesh position={[0, -0.1, 1.25]}>
-          <boxGeometry args={[0.5, 0.15, 0.1]} />
+        {/* Engine Heat distortion (glowing red mesh when moving fast) */}
+        <mesh position={[0, -0.1, 1.2]}>
+          <boxGeometry args={[0.4, 0.1, 0.3]} />
           <meshBasicMaterial 
-            color="#00f2ff" 
+            color="#ff4400" 
             transparent 
-            opacity={Math.min(0.9, (Math.sqrt((velocity?.[0]||0)**2 + (velocity?.[1]||0)**2 + (velocity?.[2]||0)**2) / 15))} 
+            opacity={Math.min(0.8, (Math.sqrt((velocity?.[0]||0)**2 + (velocity?.[1]||0)**2 + (velocity?.[2]||0)**2) / 20))} 
           />
         </mesh>
       </mesh>

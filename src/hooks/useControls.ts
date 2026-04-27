@@ -7,7 +7,6 @@ export const useControls = () => {
     left: false,
     right: false,
     brake: false,
-    nitro: false,
     reset: false,
   });
 
@@ -32,9 +31,6 @@ export const useControls = () => {
           break;
         case ' ':
           setControls((c) => ({ ...c, brake: true }));
-          break;
-        case 'shift':
-          setControls((c) => ({ ...c, nitro: true }));
           break;
         case 'r':
           setControls((c) => ({ ...c, reset: true }));
@@ -62,9 +58,6 @@ export const useControls = () => {
           break;
         case ' ':
           setControls((c) => ({ ...c, brake: false }));
-          break;
-        case 'shift':
-          setControls((c) => ({ ...c, nitro: false }));
           break;
         case 'r':
           setControls((c) => ({ ...c, reset: false }));

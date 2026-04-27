@@ -1,6 +1,6 @@
 {
-  "name": "NEON ASPHALT",
-  "description": "A high-octane 3D arcade racer inspired by Asphalt. Features nitro boosts, drifting, and futuristic neon tracks.",
+  "name": "Abyss Drift: Sim Racing",
+  "description": "An ultra-realistic 3D sim-racing game featuring punishing physics, narrow mountain passes, and mechanical damage simulation.",
   "requestFramePermissions": [],
   "majorCapabilities": ["3d_rendering", "physics_engine", "sim_racing"]
 }

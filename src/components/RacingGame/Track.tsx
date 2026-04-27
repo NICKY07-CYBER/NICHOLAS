@@ -1,110 +1,77 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { usePlane, useBox } from '@react-three/cannon';
-import { Text, Float } from '@react-three/drei';
-import { useRacingStore } from '../../hooks/useRacingStore';
+import { Text } from '@react-three/drei';
 
 export const Track = () => {
-  const { completeLap, currentLapTime } = useRacingStore();
-  const lastTriggerTime = useRef(0);
-
-  // Ground plane (Visual infinite darkness)
+  // Ground plane (The death zone)
   const [floor] = usePlane(() => ({
     rotation: [-Math.PI / 2, 0, 0],
-    position: [0, -1, 0],
+    position: [0, -100, 0],
     type: 'Static',
   }));
 
   // Initial Platform
   const [startPlatform] = useBox(() => ({
-    args: [30, 1, 30],
+    args: [20, 1, 20],
     position: [0, -0.5, 0],
     type: 'Static',
   }));
 
-  // Finish Line Sensor
-  const [finishLine] = useBox(() => ({
-    args: [30, 10, 2],
-    position: [0, 5, 0],
-    isSensor: true,
-    onCollide: (e) => {
-      // Prevent double triggers (only allow after 5 seconds of racing)
-      if (currentLapTime > 5) {
-        completeLap();
-      }
-    }
-  }));
-
+  // Brutalist Narrow Pillars & Turns
   return (
     <group>
       <mesh ref={floor}>
-        <planeGeometry args={[2000, 2000]} />
-        <meshStandardMaterial color="#020202" metalness={1} roughness={0.5} />
+        <planeGeometry args={[1000, 1000]} />
+        <meshStandardMaterial color="#050505" transparent opacity={0.5} />
       </mesh>
-
       <mesh ref={startPlatform}>
-        <boxGeometry args={[30, 1, 30]} />
-        <meshStandardMaterial color="#111" roughness={0.1} metalness={0.9} />
-        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-          <Text
-            position={[0, 4, -10]}
-            fontSize={2.5}
-            color="#00f2ff"
-            font="/fonts/Inter-Bold.woff" // fallback
-          >
-            NEON ASPHALT
-            <meshBasicMaterial color="#00f2ff" toneMapped={false} />
-          </Text>
-        </Float>
+        <boxGeometry args={[20, 1, 20]} />
+        <meshStandardMaterial color="#333" roughness={1} />
+        <Text
+          position={[0, 0.6, 5]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={1.2}
+          color="white"
+        >
+          VERTICAL ABYSS - ASCEND
+        </Text>
       </mesh>
 
-      {/* Finish Line Visual */}
-      <group position={[0, 0, 0]}>
-        <mesh ref={finishLine} visible={false}>
-          <boxGeometry args={[30, 10, 2]} />
-        </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[30, 4]} />
-          <meshBasicMaterial color="#00f2ff" transparent opacity={0.4} />
-        </mesh>
-        <mesh position={[0, 5, 0]}>
-          <boxGeometry args={[31, 10, 0.2]} />
-          <meshBasicMaterial color="#00f2ff" wireframe transparent opacity={0.1} />
-        </mesh>
-        {/* Luminous Start Gate */}
-        <NeonArch position={[0, 0, 1.5]} color="#00f2ff" />
-      </group>
-
-      {/* Futuristic Tracks */}
-      <TrackSegment position={[0, 0, -40]} args={[12, 0.5, 60]} />
-      <TrackSegment position={[10, 0, -100]} rotation={[0, 0.4, 0]} args={[12, 0.5, 80]} />
-      <TrackSegment position={[40, 2, -160]} rotation={[0.1, 0.8, 0]} args={[12, 0.5, 100]} />
-      <TrackSegment position={[100, 10, -200]} rotation={[0, 1.57, 0]} args={[140, 0.5, 12]} />
+      {/* Segment 1: Straight Climb */}
+      <TrackSegment position={[0, 2, -30]} rotation={[0.1, 0, 0]} args={[6, 0.5, 40]} color="#111" />
       
-      {/* Neon Archways */}
-      <NeonArch position={[0, 0, -30]} color="#00f2ff" />
-      <NeonArch position={[10, 0, -80]} rotation={[0, 0.4, 0]} color="#f0f" />
-      <NeonArch position={[40, 2, -140]} rotation={[0.1, 0.8, 0]} color="#0f0" />
-      <NeonArch position={[80, 10, -205]} rotation={[0, 1.57, 0]} color="#ff0" />
+      {/* Segment 2: Hairpin Turn (The Danger Zone) */}
+      <TrackSegment position={[15, 6, -60]} rotation={[0, 1.5, 0]} args={[50, 0.5, 8]} color="#222" />
+      
+      {/* Segment 3: Sharp Chicane */}
+      <TrackSegment position={[40, 10, -90]} rotation={[-0.1, 0, 0]} args={[6, 0.5, 60]} color="#111" />
+      
+      {/* Visual Decor: Brutalist Slabs and Scattered Debris */}
+      <mesh position={[-20, 0, -50]}>
+        <boxGeometry args={[2, 100, 2]} />
+        <meshStandardMaterial color="#444" />
+      </mesh>
+      <mesh position={[20, 0, -100]}>
+        <boxGeometry args={[2, 200, 2]} />
+        <meshStandardMaterial color="#444" />
+      </mesh>
 
-      {/* Distant Skyscrapers (Neon cubes) */}
-      {[...Array(30)].map((_, i) => (
-        <mesh key={i} position={[(Math.random() - 0.5) * 500, (Math.random() * 100), -200 - Math.random() * 300]}>
-          <boxGeometry args={[10 + Math.random() * 20, 50 + Math.random() * 150, 10 + Math.random() * 20]} />
-          <meshStandardMaterial color="#050505" />
-          {/* Windows/Glow */}
-          <mesh position={[0, 0, 0]} scale={[1.01, 1.01, 1.01]}>
-             <boxGeometry args={[11 + Math.random() * 20, 51 + Math.random() * 150, 11 + Math.random() * 20]} />
-             <meshBasicMaterial color={['#00f2ff', '#f0f', '#0f0'][i % 3]} wireframe opacity={0.1} transparent />
-          </mesh>
+      {/* Scattered Debris (Visual only) */}
+      {[...Array(10)].map((_, i) => (
+        <mesh key={i} position={[(Math.random() - 0.5) * 40, 0, -i * 20]}>
+           <boxGeometry args={[0.5, 0.5, 0.5]} />
+           <meshStandardMaterial color="#222" />
         </mesh>
       ))}
 
-      <fog attach="fog" args={['#030305', 50, 400]} />
+      <ambientLight intensity={0.2} />
+      <directionalLight position={[10, 20, 5]} intensity={1} castShadow />
+      <fog attach="fog" args={['#000', 30, 200]} />
     </group>
   );
 };
 
-const TrackSegment = ({ position, rotation = [0, 0, 0], args }: any) => {
+const TrackSegment = ({ position, rotation, args, color }: any) => {
   const [ref] = useBox(() => ({
     type: 'Static',
     args,
@@ -115,42 +82,16 @@ const TrackSegment = ({ position, rotation = [0, 0, 0], args }: any) => {
   return (
     <mesh ref={ref}>
       <boxGeometry args={args} />
-      <meshStandardMaterial color="#080808" roughness={0.1} metalness={1} />
-      
-      {/* Road Center Line */}
-      <mesh position={[0, 0.26, 0]}>
-        <planeGeometry args={[0.2, args[2]]} />
-        <meshBasicMaterial color="#00f2ff" toneMapped={false} />
+      <meshStandardMaterial color={color} roughness={0.8} />
+      {/* Visual curbs */}
+      <mesh position={[args[0]/2 - 0.2, 0.3, 0]}>
+        <boxGeometry args={[0.4, 0.2, args[2]]} />
+        <meshStandardMaterial color="red" />
       </mesh>
-
-      {/* Luminous Curbs */}
-      <mesh position={[args[0]/2 - 0.1, 0.3, 0]}>
-        <boxGeometry args={[0.2, 0.4, args[2]]} />
-        <meshBasicMaterial color="#f0f" toneMapped={false} />
-      </mesh>
-      <mesh position={[-args[0]/2 + 0.1, 0.3, 0]}>
-        <boxGeometry args={[0.2, 0.4, args[2]]} />
-        <meshBasicMaterial color="#f0f" toneMapped={false} />
+      <mesh position={[-args[0]/2 + 0.2, 0.3, 0]}>
+        <boxGeometry args={[0.4, 0.2, args[2]]} />
+        <meshStandardMaterial color="red" />
       </mesh>
     </mesh>
   );
 };
-
-const NeonArch = ({ position, rotation = [0, 0, 0], color }: any) => {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 8, 0]}>
-        <boxGeometry args={[20, 0.5, 1]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
-      </mesh>
-      <mesh position={[10, 4, 0]}>
-        <boxGeometry args={[0.5, 8, 1]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
-      </mesh>
-      <mesh position={[-10, 4, 0]}>
-        <boxGeometry args={[0.5, 8, 1]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
-      </mesh>
-    </group>
-  );
-}
